@@ -110,8 +110,8 @@ function runner (opts) {
         }
 
         browser.on('exit', function (code, signal) {
-          try { server.destroy() } catch (e) {}
-          dpl.emit('exit', code, signal);
+          // try { server.destroy() } catch (e) {}
+          // dpl.emit('exit', code, signal);
         });
       });
     });
