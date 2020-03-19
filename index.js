@@ -10,7 +10,8 @@ var launch = require('./lib/launch');
 var ecstatic = require('ecstatic');
 var injectScript = require('html-inject-script');
 var destroyable = require('server-destroy');
-var extend = require('xtend')
+var extend = require('xtend');
+var url = require('url');
 
 try {
   fs.statSync(__dirname + '/static/reporter.js')
@@ -43,32 +44,34 @@ function runner (opts) {
   var mockHandler = opts.mock && require(path.resolve('./', opts.mock))
 
   var server = http.createServer(function (req, res) {
+    var path = url.parse(req.url).pathname;
+    
     if (opts.input === 'javascript') {
-      if (/^\/bundle\.js/.test(req.url)) {
+      if (/^\/bundle\.js/.test(path)) {
         res.setHeader('content-type', 'application/javascript');
         res.setHeader('cache-control', 'no-cache');
         bundle.createReadStream().pipe(res);
         return;
       }
 
-      if (req.url == '/') {
+      if (path == '/') {
         fs.createReadStream(__dirname + '/static/index.html').pipe(res);
         return;
       }
     } else if (opts.input === 'html') {
-      if (req.url == '/') {
+      if (path == '/') {
         bundle.createReadStream().pipe(injectScript(['/reporter.js'])).pipe(res);
         return;
       }
     }
 
-    if (req.url == '/xws') {
+    if (path == '/xws') {
       req.pipe(xws(function (stream) {
         stream.pipe(output);
       }));
       return req.on('end', res.end.bind(res));
     }
-    if (req.url == '/reporter.js') {
+    if (path == '/reporter.js') {
       res.setHeader('content-type', 'application/javascript');
       fs.createReadStream(__dirname + '/static/reporter.js').pipe(res);
       return;
@@ -77,7 +80,7 @@ function runner (opts) {
       ecstatic({ root: opts.static })(req, res);
       return;
     }
-    if (mockHandler && '/mock' === req.url.substr(0,5)){
+    if (mockHandler && '/mock' === path.substr(0,5)){
         return mockHandler(req, res);
     }
 
@@ -96,7 +99,7 @@ function runner (opts) {
       var port = address.port;
 
       launch(extend(opts, {
-        loc: 'http://localhost:' + port + (opts.queryParams ? opts.queryParams : ''),
+        loc: 'http://localhost:' + port + (opts.queryParams ? '?' + opts.queryParams : ''),
         name: opts.browser,
         bundle: bundle
       }), function(err, _browser){
