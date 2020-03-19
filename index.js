@@ -96,7 +96,7 @@ function runner (opts) {
       var port = address.port;
 
       launch(extend(opts, {
-        loc: 'http://localhost:' + port,
+        loc: 'http://localhost:' + port + (opts.queryParams ? opts.queryParams : ''),
         name: opts.browser,
         bundle: bundle
       }), function(err, _browser){
